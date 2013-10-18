@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title> Geocode Lookup Demo </title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script type="text/javascript" src="geocode.js"></script>
+	<script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+	<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places,weather,panoramio"></script>
+	<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/excite-bike/jquery-ui.css">
+	<link rel="stylesheet" href="geocodestyle.css">
+</head>
+<body>
+	<h1>Geocode and Map Lookup Demo</h1>
+
+	<div class="block" id="mapblock">
+		<div id="map-canvas"></div>
+		<div id="areaSearch">
+			<input type="search" placeholder="Enter a location" id="address" class="ui-autocomplete-input" autofocus/>
+			<input class="bigButton" type="submit" id="searchButton" value="SEARCH"/>
+			<!-- Layer Selection -->
+			<form style="margin-top: 1em;">
+				<div id="layerselect">
+					<input type="checkbox" id="check1" class="checkall"><label for="check1">Weather Layer</label>
+					<input type="checkbox" id="check2" class="checkall"><label for="check2">Traffic Layer</label>
+					<input type="checkbox" id="check3" class="checkall"><label for="check3">Transit Layer</label>
+					<input type="checkbox" id="check4" class="checkall"><label for="check4">Panoramio Layer</label>
+					<input class="bigButton" type="button" id="selectAllButton" value="Select All Layers">
+					<input class="bigButton" type="button" id="clearAllButton" value="Clear All Layers">
+				</div>
+			</form>
+		</div>
+		<div id="divResult"></div>
+	</div>
+	<div class="block" id="streetblock">
+		<div id="streetview-canvas"></div>
+		<div class="ui-state-error ui-corner-all" style="padding: 0 .3em;" id="alertGroup">
+			<p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span>
+			<span id="alertMessage">TEST</span></p>
+		</div>
+	</div>
+</body>
+
+
+</html>

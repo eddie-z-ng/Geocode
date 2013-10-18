@@ -1,0 +1,100 @@
+body
+{ 
+	font-family: 'lucida grande', tahoma, verdana, arial, sans-serif;
+}
+
+.display_box
+{
+	padding:4px; border-top:solid 1px #dedede; 
+	font-size:12px;
+}
+.display_box:hover, .hlight
+{
+	background:#3bb998;
+	color:#FFFFFF;
+	cursor:pointer;
+}
+
+<!--Google Autocomplete results-->
+.pac-container, .pac-item {
+	cursor:pointer;
+	padding:4px; 
+	border-top:solid 1px #dedede; 
+	font-size:16px;
+}
+
+.pac-item:hover {
+	background:#3bb978;
+	color:#FFFFFF;
+}
+
+.pac-selected {
+	background:#3bb998;
+	color:#FFFFFF;
+}
+
+#address 
+{
+	width: 450px;
+	border: solid px #000;
+	padding: 3px;
+}
+
+.block
+{
+    width: 700px; 
+	height: 600px;
+	float: left;
+	margin-left: 15px;
+}
+
+#map-canvas
+{
+	width: 700px; 
+	height: 480px;
+}
+
+#streetview-canvas
+{
+	width: 700px; 
+	height: 480px;
+	margin-right: 100px;
+}
+
+#divResult
+{
+	position:absolute;
+	width:450px;
+	display:none;
+	margin-top:-1px;
+	border:solid 1px #dedede;
+	border-top:0px;
+	overflow:hidden;
+	border-bottom-right-radius: 6px;
+	border-bottom-left-radius: 6px;
+	-moz-border-bottom-right-radius: 6px;
+	-moz-border-bottom-left-radius: 6px;
+	box-shadow: 0px 0px 5px #999;
+	border-width: 3px 1px 1px;
+	border-style: solid;
+	border-color: #333 #DEDEDE #DEDEDE;
+	background-color: white;
+}
+
+<!--
+#icons {
+	margin: 0;
+	padding: 0;
+}
+#icons li {
+	margin: 2px;
+	position: relative;
+	padding: 4px 0;
+	cursor: pointer;
+	float: left;
+	list-style: none;
+}
+#icons span.ui-icon {
+	float: left;
+	margin: 0 4px;
+}-->

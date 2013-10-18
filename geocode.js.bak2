@@ -1,0 +1,285 @@
+/* Simple Geocode Google Javascript Demo */
+/*
+   1) Regular searches results in a generic place marker and infowindow with lat/long centered on the map
+     and an approximate StreetView if applicable.
+   2) Use Autocomplete Places to populate search box. Selection of autocomplete suggestion 
+     results in a unique place marker and infowindow with address/website centered on the map
+	 and an approximate StreetView if applicable.
+	** Current known bug: Selecting autocomplete entry and pressing 'ENTER' key will result in both codeAddress() being called
+	                      and the place_changed event handler to occur right after. This results in an extra general marker.
+   3) Uses jQuery UI theme "Excite-Bike"
+*/
+
+// Global object literal for the demo
+var GEOCODE_DEMO = { };
+
+/*var utilities = {
+	printAllMembers: function(targetObject) {
+		for (i in targetObject) {
+			alert(i + " : " + targetObject[i]);
+		}
+	}
+}*/
+
+function clearOverlays() {
+  for (var i = 0; i < GEOCODE_DEMO.markersArray.length; i++ ) {
+    GEOCODE_DEMO.markersArray[i].setMap(null);
+  }
+  GEOCODE_DEMO.markersArray = [];
+};
+
+function initialize() {
+	GEOCODE_DEMO.gCoder = new google.maps.Geocoder();
+	GEOCODE_DEMO.infowindow = new google.maps.InfoWindow();
+	GEOCODE_DEMO.markersArray = [];
+	var latlng = new google.maps.LatLng(40.7143528,-74.0059731) // Initialize to NYC
+	var mapOptions = {
+	  zoom: 6,
+	  center: latlng,
+	  mapTypeControlOptions: { 
+		mapTypeIds: [google.maps.MapTypeId.HYBRID, 
+			google.maps.MapTypeId.ROADMAP, 
+			google.maps.MapTypeId.SATELLITE, 
+			google.maps.MapTypeId.TERRAIN]
+		},
+	  mapTypeId: google.maps.MapTypeId.ROADMAP
+	};
+	GEOCODE_DEMO.map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+	
+	var marker1 = new google.maps.Marker({
+		map: GEOCODE_DEMO.map,
+		position: latlng
+	});
+	GEOCODE_DEMO.markersArray.push(marker1);
+	
+	GEOCODE_DEMO.gCoder.geocode( { 'latLng': latlng}, function(results, status) {
+	  if (status == google.maps.GeocoderStatus.OK) {
+		marker1.setTitle(results[0].formatted_address);
+		GEOCODE_DEMO.infowindow.setContent(results[0].formatted_address + " " + 
+											GEOCODE_DEMO.map.getCenter().lat() + "," + 
+											GEOCODE_DEMO.map.getCenter().lng()); 
+		GEOCODE_DEMO.infowindow.open(GEOCODE_DEMO.map, marker1)
+	  } else {
+			$('#alertMessage').text("Geocode was not successful for the following reason: " + status);
+			$('#alertGroup').show();
+	  }
+	});
+	
+	var panoOptions = {
+	  clickToGo: true,
+	  position: latlng,
+	  visible: true
+	};
+	
+	GEOCODE_DEMO.sViewPano = new google.maps.StreetViewPanorama(document.getElementById("streetview-canvas"), panoOptions);
+	GEOCODE_DEMO.sViewPano.setPov( {
+		heading: 34,
+		pitch: 10,
+		zoom: 1
+	});
+	
+	// Bind the Streetview Panorama to the this map so Streetview is displayed on its own canvas
+	GEOCODE_DEMO.map.setStreetView(GEOCODE_DEMO.sViewPano); 
+	GEOCODE_DEMO.sView = GEOCODE_DEMO.map.getStreetView();
+	GEOCODE_DEMO.sView.setPosition(latlng);
+			  
+	var input = document.getElementById('address');
+	var autocomplete = new google.maps.places.Autocomplete(input);
+	autocomplete.bindTo('bounds', GEOCODE_DEMO.map);
+	
+	google.maps.event.addListener(autocomplete, 'place_changed', function() {
+		alert("address changed");
+		input.className = '';
+		var place = autocomplete.getPlace();
+		if (!place.geometry) {
+		  // Inform the user that the place was not found and return.
+		  input.className = 'notfound';
+		  return;
+		}
+		
+		// If the place has a geometry, then present it on a map.
+		if (place.geometry.viewport) {
+		  GEOCODE_DEMO.map.fitBounds(place.geometry.viewport);
+		} else {
+		  // Pan the map to the location smoothly if less than width and height of current map
+		  GEOCODE_DEMO.map.panTo(place.geometry.location);
+		  GEOCODE_DEMO.map.setCenter(place.geometry.location);
+		  GEOCODE_DEMO.map.setZoom(18); 
+		}
+		
+		var client = new google.maps.StreetViewService(); 
+		client.getPanoramaByLocation(place.geometry.location, 200, function(res, 
+			status) { 
+		  if (status === google.maps.StreetViewStatus.OK) { 
+			GEOCODE_DEMO.sViewPano = res.location.pano;
+			GEOCODE_DEMO.sView = GEOCODE_DEMO.map.getStreetView();
+			// Set position of the streetview to closest panorama in 200 meter radius
+			GEOCODE_DEMO.sView.setPosition(res.location.latLng);
+		  } 
+		  else
+		  {
+			$('#alertMessage').text("Unable to find closest streetview panorama within 200 meters. Please be more specific");
+			$('#alertGroup').show();
+		  }
+		}); 
+		
+		var marker = new google.maps.Marker({
+			map: GEOCODE_DEMO.map
+		});
+		marker.setIcon(/** @type {google.maps.Icon} */({
+		  url: place.icon,
+		  size: new google.maps.Size(71, 71),
+		  origin: new google.maps.Point(0, 0),
+		  anchor: new google.maps.Point(17, 34),
+		  scaledSize: new google.maps.Size(35, 35)
+		}));
+		marker.setPosition(place.geometry.location);
+		marker.setVisible(true);
+		GEOCODE_DEMO.markersArray.push(marker);
+
+		var placeInfo = '';
+		if (place.address_components) {
+		  placeInfo = [
+			(place.address_components[0] && place.address_components[0].short_name || ''),
+			(place.address_components[1] && place.address_components[1].short_name || ''),
+			(place.address_components[2] && place.address_components[2].short_name || '')
+		  ].join(' ');
+		  if (place.website) {
+			placeInfo = placeInfo + '<br><a href="' + place.website + '">' + place.website + '</a>';
+		  }
+		}
+		GEOCODE_DEMO.infowindow.setContent('<div><strong>' + place.name + '</strong><br>' + placeInfo);
+		GEOCODE_DEMO.infowindow.open(GEOCODE_DEMO.map, marker);
+	});
+
+};
+
+function codeAddress() {
+	// Remove all markers/layers
+	clearOverlays();
+	$('#alertGroup').hide();
+	//$("#divResult").fadeOut();
+	var address = document.getElementById("address").value;
+	if (address !== '') {
+		GEOCODE_DEMO.gCoder.geocode( { 'address': address}, function(results, status) {
+		  if (status === google.maps.GeocoderStatus.OK) {
+			// Pan the map to the location smoothly if less than width and height of current map
+			GEOCODE_DEMO.map.panTo(results[0].geometry.location);
+			GEOCODE_DEMO.map.setCenter(results[0].geometry.location);
+			GEOCODE_DEMO.map.setZoom(18);
+		
+			var client = new google.maps.StreetViewService(); 
+			client.getPanoramaByLocation(results[0].geometry.location, 200, function(res, 
+			status) { 
+			  if (status === google.maps.StreetViewStatus.OK) { 
+				GEOCODE_DEMO.sViewPano = res.location.pano;
+				GEOCODE_DEMO.sView = GEOCODE_DEMO.map.getStreetView();
+				// Set position of the streetview to closest panorama in 200 meter radius
+				GEOCODE_DEMO.sView.setPosition(res.location.latLng);
+			  } 
+			  else
+			  {
+			  	$('#alertMessage').text("Unable to find closest streetview panorama within 200 meters. Please be more specific");
+				$('#alertGroup').show();
+			  }
+			}); 
+			
+			var marker2 = new google.maps.Marker({
+				map: GEOCODE_DEMO.map,
+				position: results[0].geometry.location,
+				title: results[0].formatted_address
+			});
+			GEOCODE_DEMO.markersArray.push(marker2);		
+			GEOCODE_DEMO.infowindow.setContent(results[0].formatted_address + " " + 
+											GEOCODE_DEMO.map.getCenter().lat() + "," + 
+											GEOCODE_DEMO.map.getCenter().lng()); 
+			GEOCODE_DEMO.infowindow.open(GEOCODE_DEMO.map, marker2)
+		  } else {
+				if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+					$('#alertMessage').text("Too many requests -- Please try again shortly");
+					$('#alertGroup').show();
+				}
+				else {
+					$('#alertMessage').text("Geocode was not successful for the following reason: " + status);
+					$('#alertGroup').show();
+				}
+		  }
+		});
+	}
+};
+
+/* //Reverse Geocoding 
+function formatResults(results) {
+	var res = "";
+	jQuery.each(results, function (i, val) {
+		console.log(val.formatted_address);
+		res += "<div class=\"display_box\" align=\"left\">";
+		res += "<span class=\"location\">";
+		res += val.formatted_address;
+		res += "</span>";
+		res += "<br/>";
+		res += "</div>";
+	});
+
+	return res;
+};*/
+
+$(function () {
+
+	initialize();
+
+	$('#searchButton').click(codeAddress);
+	$('#address').keypress(function(e){
+        if(e.which == 13){	//Enter key pressed
+            codeAddress();	//Trigger search button click event
+        }
+    });
+	
+	$('#alertGroup').hide();
+	
+	$('.bigButton').button();
+	$('#layerselect').buttonset();
+	
+	
+	/*utilities.printAllMembers(GEOCODE_DEMO);
+	//$('#address').attr("autocomplete","off");*/
+	
+	/* //Reverse Geocoding
+	$('#address').keyup(function () {
+		var inputSearch = $(this).val();
+		var d = document.getElementById("divResult");
+		if (inputSearch != '') {
+			GEOCODE_DEMO.gCoder.geocode( 
+			{
+				address: inputSearch,
+				region: 'no'
+			}, function (results, status) {
+				if (status === google.maps.GeocoderStatus.OK) {
+					//d.html(formatResults(results)).show();
+					$("#divResult").html(formatResults(results)).show();
+				}
+			});
+		} return false;
+	});*/
+	
+	/* //Reverse Geocoding
+	$('#divResult').on("click", function (e) {
+		var $clicked = $(e.target);
+		var $location = $clicked.text(); //$clicked.find('.location').html();
+		        console.log("#divResult click: clicked:")
+                console.log($clicked);
+                console.log("#divResult click: location: ");
+                console.log($location);
+		if ($location !== undefined && $location !== null) {
+			//var decoded = $("<div/>").html($location).text();
+			//$('#address').val(decoded);
+			$('#address').val($location);
+			codeAddress();
+		}
+	}); 
+	
+	$('#address').focusout(function () {
+		$('#divResult').fadeOut();
+	});
+	*/
+});
